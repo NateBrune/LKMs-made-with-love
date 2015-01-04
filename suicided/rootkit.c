@@ -1,67 +1,32 @@
-#include <linux/module.h> // needed for writing modules
-#include <linux/kernel.h> // kernel helper functions like printk
-#include <linux/syscalls.h> // The syscall table and __NR_<syscall_name> helpers
-#include <asm/paravirt.h> // read_cr0, write_cr0
-#include <linux/sched.h> // current task_struct
-#include <linux/slab.h> // kmalloc, kfree
-#include <asm/uaccess.h> // copy_from_user, copy_to_user
+#include <linux/module.h>
+#include <linux/syscalls.h>
+#include <asm/paravirt.h>
+#include <linux/sched.h>
+#include <linux/slab.h>
+#include <asm/uaccess.h>
 
-/* The sys_call_table is const but we can point our own variable at
-* its memory location to get around that.
-*/
 unsigned long **sys_call_table;
-
-/* The control register's value determines whether or not memory is
-* protected. We'll need to modify it, to turn off memory protection,
-* in order to write over the read system call. Here we store the initial
-* control register value so we can set it back when we're finished
-* (memory protection is generally good)!
-*/
 unsigned long original_cr0;
-
-/* The prototype for the write syscall. This is where we'll store the original
-* before we swap it out in the sys_call_table.
-*/
 asmlinkage long (*ref_sys_exit)(int error_code);
-
-/* Our new system call function; a wrapper for the original read. */
 asmlinkage long new_sys_exit(int error_code)
 {
-  if((strcmp(current->comm, "exit") == 0))
+  if((strcmp(current->comm, "exit") == 0)) // if the program name is "exit"
   {
     printk("[preventd] Dear god... %s tried to kill itself :(\n", current->comm);
     printk("[preventd] Crisis Averted, whew.\n");
     return 0;
   }
   else{
-
     return ref_sys_exit(error_code);
   }
 }
-
-    /* The whole trick here is to find the syscall table in memory
-    * so we can copy it to a non-const pointer array,
-    * then, turn off memory protection so that we can modify the
-    * syscall table.
-    */
     static unsigned long **aquire_sys_call_table(void)
   {
-    /* PAGE_OFFSET is a macro which tells us the offset where kernel memory begins,
-    * this keeps us from searching for our syscall table in user space memory
-    */
+
     unsigned long int offset = PAGE_OFFSET;
     unsigned long **sct;
-    /* Scan memory searching for the syscall table, which is contigious */
-    printk("Starting syscall table scan from: %lx\n", offset);
     while (offset < ULLONG_MAX) {
-      /* cast our starting offset to match the system call table's type */
       sct = (unsigned long **)offset;
-
-      /* We're scanning for a bit pattern that matches sct[__NR_close]
-      * so we just increase 'offset' until we find it. Put another way
-      * we're looking for the first location in memory which seems to hold
-      * the address of the sys_close function.
-      */
       if (sct[__NR_close] == (unsigned long *) sys_close) {
         printk("Syscall table found at: %lx\n", offset);
         return sct;
@@ -74,20 +39,12 @@ asmlinkage long new_sys_exit(int error_code)
 
   static int __init rootkit_start(void)
 {
-  // Find the syscall table in memory
   if(!(sys_call_table = aquire_sys_call_table()))
     return -1;
-
-    // record the initial value in the cr0 register
     original_cr0 = read_cr0();
-    // set the cr0 register to turn off write protection
     write_cr0(original_cr0 & ~0x00010000);
-
-    // copy the old read call
     ref_sys_exit = (void *)sys_call_table[__NR_exit];
-    // write our modified read call to the syscall table
     sys_call_table[__NR_exit] = (unsigned long *)new_sys_exit;
-    // turn memory protection back on
     write_cr0(original_cr0);
     printk("[preventd] Life Saving Rootkit activated.\n");
     return 0;
@@ -100,16 +57,11 @@ asmlinkage long new_sys_exit(int error_code)
     return;
   }
 
-  // turn off memory protection
   write_cr0(original_cr0 & ~0x00010000);
-  // put the old system call back in place
   sys_call_table[__NR_exit] = (unsigned long *)ref_sys_exit;
-  // memory protection back on
   write_cr0(original_cr0);
   printk("[preventd] Think of the programs. \n");
 }
-
 module_init(rootkit_start);
 module_exit(rootkit_end);
-
 MODULE_LICENSE("GPL");
