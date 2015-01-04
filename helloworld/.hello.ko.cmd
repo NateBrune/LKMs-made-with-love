@@ -1,0 +1,1 @@
+cmd_/home/dime/Projects/modules/helloworld/hello.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/dime/Projects/modules/helloworld/hello.ko /home/dime/Projects/modules/helloworld/hello.o /home/dime/Projects/modules/helloworld/hello.mod.o
