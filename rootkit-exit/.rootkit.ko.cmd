@@ -1,0 +1,1 @@
+cmd_/home/dime/Projects/modules/rootkit-exit/rootkit.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/dime/Projects/modules/rootkit-exit/rootkit.ko /home/dime/Projects/modules/rootkit-exit/rootkit.o /home/dime/Projects/modules/rootkit-exit/rootkit.mod.o
