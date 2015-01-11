@@ -1,1 +1,0 @@
-cmd_/home/dime/Projects/LKMs-made-with-love/hellousb/hellousb.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/dime/Projects/LKMs-made-with-love/hellousb/hellousb.ko /home/dime/Projects/LKMs-made-with-love/hellousb/hellousb.o /home/dime/Projects/LKMs-made-with-love/hellousb/hellousb.mod.o
