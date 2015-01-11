@@ -1,4 +1,4 @@
-obj-m += hello.o
+obj-m += chardevice.o
 ifdef KERNEL_SOURCE
 all:
 	make -C ${KERNEL_SOURCE} SUBDIRS=$(shell pwd) modules
