@@ -12,4 +12,4 @@ you compile these bad boys with three simple steps.
 3 )as root, insmod [module-name].ko
 
 
-and then you can view the output of each rootkit by using dmesg
+and then you can view the output of each module by using dmesg
